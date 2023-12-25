@@ -20,7 +20,15 @@ def get_apt_price():
     data = response.json()
     token_price_usd = data[token_name]['usd']
     return token_price_usd
-
+def submit_and_log_transaction(account, payload, logger):
+    try:
+        txn = Rest_Client.submit_transaction(account, payload)
+        Rest_Client.wait_for_transaction(txn)
+        logger.info(f'Success: https://explorer.aptoslabs.com/txn/{txn}?network=mainnet')
+    except AssertionError as e:
+        logger.error(f"AssertionError caught: {e}")
+    except Exception as e:
+        logger.critical(f"An unexpected error occurred: {e}")
 def get_account_balance(client, account):
     logger = setup_gay_logger('get_account_balance')
     try:
@@ -56,14 +64,7 @@ def swap_zUSDC_to_MOD(account, amount_zUSDC: int):
             str(MOD_slip_int)
         ],
     }
-    try:
-        txn = Rest_Client.submit_transaction(account, payload)
-        Rest_Client.wait_for_transaction(txn)
-        logger.info(f'Success: https://explorer.aptoslabs.com/txn/{txn}?network=mainnet')
-    except AssertionError as e:
-        logger.error(f"AssertionError caught: {e}")
-    except Exception as e:
-        logger.critical(f"An unexpected error occurred: {e}")
+    submit_and_log_transaction(account, payload, logger)
 
 def check_registration(address, to_check: str):
     logger = setup_gay_logger('check_zUSDC_registration')
@@ -77,6 +78,21 @@ def check_registration(address, to_check: str):
         logger.error(f"An error occurred: {e}")
         return False
 
+def deposit_MOD(account, amount_MOD: int):
+    logger = setup_gay_logger('deposit_MOD')
+
+    payload = {
+        "type": "entry_function_payload",
+        "function": "0x6f986d146e4a90b828d8c12c14b6f4e003fdff11a8eecceceb63744363eaac01::stability_pool_scripts::deposit_mod",
+        "type_arguments": [
+            "0x6f986d146e4a90b828d8c12c14b6f4e003fdff11a8eecceceb63744363eaac01::stability_pool::Crypto"
+        ],
+        "arguments": [
+            str(amount_MOD)
+        ],
+    }
+    submit_and_log_transaction(account, payload, logger)
+
 def register_coin(account, to_register: str):
     logger = setup_gay_logger(f'register_coin:<{to_register}>')
 
@@ -88,15 +104,7 @@ def register_coin(account, to_register: str):
         ],
         "arguments": []
     }
-
-    try:
-        txn = Rest_Client.submit_transaction(account, payload)
-        Rest_Client.wait_for_transaction(txn)
-        logger.info(f'Success: https://explorer.aptoslabs.com/txn/{txn}?network=mainnet')
-    except AssertionError as e:
-        logger.error(f"AssertionError caught: {e}")
-    except Exception as e:
-        logger.critical(f"An unexpected error occurred: {e}")
+    submit_and_log_transaction(account, payload, logger)
 
 def swap_APT_to_zUSDC(account, amount: int):
     logger = setup_gay_logger('swap_APT_to_zUSDC')
@@ -120,11 +128,4 @@ def swap_APT_to_zUSDC(account, amount: int):
             str(zUSDC_slip_int)
         ],
     }
-    try:
-        txn = Rest_Client.submit_transaction(account, payload)
-        Rest_Client.wait_for_transaction(txn)
-        logger.info(f'Success: https://explorer.aptoslabs.com/txn/{txn}?network=mainnet')
-    except AssertionError as e:
-        logger.error(f"AssertionError caught: {e}")
-    except Exception as e:
-        logger.critical(f"An unexpected error occurred: {e}")
+    submit_and_log_transaction(account, payload, logger)
