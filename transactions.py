@@ -1,12 +1,9 @@
-import json
 import requests
-import random
 
-from aptos_sdk.account import Account
 from aptos_sdk.client import RestClient
 
 from logger import setup_gay_logger
-from constant import zUSDC_coin, MOD_coin, MAX_SLIPPAGE_PERCENT
+from constant import MAX_SLIPPAGE_PERCENT
 
 
 SLIPPAGE = (100 - MAX_SLIPPAGE_PERCENT) / 100
@@ -183,3 +180,128 @@ def open_merkle_order(account, amount_zUSDC: int):
     }
 
     submit_and_log_transaction(account, payload, logger)
+
+def stake_APT(account, amount: int):
+    logger = setup_gay_logger('stake_APT')
+
+    if amount < 20000000:
+        logger.error(f"Amount ({amount / Z8} ATP) less than required (0.2 APT)")
+        return
+
+    payload = {
+        "function": "0x111ae3e5bc816a5e63c2da97d0aa3886519e0cd5e4b046659fa35796bd11542a::router::deposit_and_stake_entry",
+        "type_arguments": [],
+        "arguments": [
+            str(amount),
+            str(account.address())
+        ],
+        "type": "entry_function_payload"
+    }
+
+    submit_and_log_transaction(account, payload, logger)
+
+def register_gator_market_account(account):
+    logger = setup_gay_logger('register_gator_market_account')
+
+    payload = {
+        "function": "0xc0deb00c405f84c85dc13442e305df75d1288100cdd82675695f6148c7ece51c::user::register_market_account",
+        "type_arguments": [
+            "0x1::aptos_coin::AptosCoin",
+            "0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::asset::USDC"
+        ],
+        "arguments": [
+            "7",
+            "0"
+        ],
+        "type": "entry_function_payload"
+    }
+
+    submit_and_log_transaction(account, payload, logger)
+
+def deposit_zUSDC_to_gator(account, zUSDC_amount: int):
+    logger = setup_gay_logger('deposit_zUSDC_to_gator')
+
+    payload = {
+        "function": "0xc0deb00c405f84c85dc13442e305df75d1288100cdd82675695f6148c7ece51c::user::deposit_from_coinstore",
+        "type_arguments": [
+            "0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::asset::USDC"
+        ],
+        "arguments": [
+            "7",
+            "0",
+            str(zUSDC_amount)
+        ],
+        "type": "entry_function_payload"
+    }
+
+    submit_and_log_transaction(account, payload, logger)
+
+def swap_zUSDC_to_APT_via_gator(account):
+    logger = setup_gay_logger('swap_zUSDC_to_APT_via_gator')
+
+    payload = {
+        "function": "0xc0deb00c405f84c85dc13442e305df75d1288100cdd82675695f6148c7ece51c::market::place_market_order_user_entry",
+        "type_arguments": [
+            "0x1::aptos_coin::AptosCoin",
+            "0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::asset::USDC"
+        ],
+        "arguments": [
+            "7",
+            "0x63e39817ec41fad2e8d0713cc906a5f792e4cd2cf704f8b5fab6b2961281fa11",
+            False,
+            "10000",
+            3
+        ],
+        "type": "entry_function_payload"
+    }
+
+    submit_and_log_transaction(account, payload, logger)
+
+def swap_zUSDC_to_APT_via_pancakeswap(account, zUSDC_amount: int):
+    logger = setup_gay_logger('swap_zUSDC_to_APT_via_pancakeswap')
+
+    apt_price = get_apt_price()
+    normalization = zUSDC_amount / Z6
+    APT_ideal = normalization / apt_price
+    APT_slip = APT_ideal * SLIPPAGE
+    APT_slip_int = int(APT_slip * Z8)
+
+    payload = {
+        "function": "0xc7efb4076dbe143cbcd98cfaaa929ecfc8f299203dfff63b95ccb6bfe19850fa::router::swap_exact_input",
+        "type_arguments": [
+            "0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::asset::USDC",
+            "0x1::aptos_coin::AptosCoin"
+        ],
+        "arguments": [
+            str(zUSDC_amount),
+            str(APT_slip_int)
+        ],
+        "type": "entry_function_payload"
+    }
+
+    submit_and_log_transaction(account, payload, logger)
+
+def swap_zUSDC_to_APT_via_sushisvap(account, zUSDC_amount: int):
+    logger = setup_gay_logger('swap_zUSDC_to_APT_via_sushisvap')
+
+    apt_price = get_apt_price()
+    normalization = zUSDC_amount / Z6
+    APT_ideal = normalization / apt_price
+    APT_slip = APT_ideal * SLIPPAGE
+    APT_slip_int = int(APT_slip * Z8)
+
+    payload = {
+        "function": "0x31a6675cbe84365bf2b0cbce617ece6c47023ef70826533bde5203d32171dc3c::router::swap_exact_input",
+        "type_arguments": [
+            "0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::asset::USDC",
+            "0x1::aptos_coin::AptosCoin"
+        ],
+        "arguments": [
+            str(zUSDC_amount),
+            str(APT_slip_int)
+        ],
+        "type": "entry_function_payload"
+    }
+
+    submit_and_log_transaction(account, payload, logger)
+
