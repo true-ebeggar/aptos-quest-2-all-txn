@@ -4,22 +4,12 @@ from aptos_sdk.client import RestClient
 
 from logger import setup_gay_logger
 from constant import MAX_SLIPPAGE_PERCENT
-
+from utils import get_apt_price, append_digit_to_integer
 
 SLIPPAGE = (100 - MAX_SLIPPAGE_PERCENT) / 100
 Z8 = 10**8
 Z6 = 10**6
 Rest_Client = RestClient("https://fullnode.mainnet.aptoslabs.com/v1")
-
-def get_apt_price():
-    try:
-        response = requests.get('https://app.merkle.trade/api/v1/summary/prices')
-        for pair in response.json()["pairs"]:
-            if pair["id"] == "APT_USD":
-                APT_usd_price = pair["price"]
-                return APT_usd_price
-    except Exception:
-        return None
 
 def submit_and_log_transaction(account, payload, logger):
     try:
@@ -31,23 +21,6 @@ def submit_and_log_transaction(account, payload, logger):
     except Exception as e:
         logger.critical(f"An unexpected error occurred: {e}")
 
-def append_digit_to_integer(original_integer, digit_to_add):
-    new_integer_string = str(original_integer) + str(digit_to_add)
-    new_integer = int(new_integer_string)
-    return new_integer
-
-def get_account_balance(client, account):
-    logger = setup_gay_logger('get_account_balance')
-
-    try:
-        return int(client.account_balance(account_address=account.address()))
-    except Exception as e:
-        if "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>" in str(e):
-            logger.critical("Account does not exist")
-            return None
-        else:
-            logger.error("An unexpected error occurred.")
-            return None
 
 def swap_zUSDC_to_MOD(account, amount_zUSDC: int):
     logger = setup_gay_logger('swap_zUSDC_to_MOD')
@@ -75,17 +48,6 @@ def swap_zUSDC_to_MOD(account, amount_zUSDC: int):
 
     submit_and_log_transaction(account, payload, logger)
 
-def check_registration(address, to_check: str):
-    logger = setup_gay_logger(f'check_<{to_check}>_registration')
-    try:
-        coin_type = f"0x1::coin::CoinStore<{to_check}>"
-        url = f"https://fullnode.mainnet.aptoslabs.com/v1/accounts/{address}/resources?limit=9999"
-        response = requests.get(url)
-        # print(json.dumps(response.json(), indent=4))
-        return any(item.get('type', '') == coin_type for item in response.json())
-    except Exception as e:
-        logger.error(f"An error occurred: {e}")
-        return False
 
 def stake_MOD(account, amount_MOD: int):
     logger = setup_gay_logger('deposit_MOD')
@@ -304,4 +266,3 @@ def swap_zUSDC_to_APT_via_sushisvap(account, zUSDC_amount: int):
     }
 
     submit_and_log_transaction(account, payload, logger)
-

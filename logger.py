@@ -5,7 +5,7 @@ import random
 
 FORMAT = "|%(asctime)s| - %(name)s - %(levelname)s - %(message)s"
 
-def setup_gay_logger(logger_name=None, rainbow=False):
+def setup_gay_logger(logger_name=None, rainbow=True):
     init()
 
     def rainbow_colorize(text):
