@@ -1,5 +1,3 @@
-import requests
-
 from aptos_sdk.client import RestClient
 
 from logger import setup_gay_logger
